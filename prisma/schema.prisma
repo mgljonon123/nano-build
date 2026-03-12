@@ -1,0 +1,19 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model StagingJob {
+  id          String   @id @map("_id") @default(auto()) @db.ObjectId
+  roomType    String
+  action      String
+  style       String
+  imageUrl    String?  // data URL or stored URL
+  finalPrompt String   @default("")
+  createdAt   DateTime @default(now())
+}
