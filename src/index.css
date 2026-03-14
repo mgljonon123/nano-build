@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-serif: "Cormorant Garamond", Georgia, serif;
-  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-serif: "Roboto", "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Roboto", "DM Sans", system-ui, sans-serif;
+  --font-display: "Great Vibes", "Cormorant Garamond", Georgia, serif;
   --color-sand: #f5f0e8;
   --color-stone: #2c2825;
   --color-warm: #8b7355;
@@ -18,4 +19,8 @@ body {
 
 .font-serif {
   font-family: var(--font-serif);
+}
+
+.font-display {
+  font-family: var(--font-display);
 }

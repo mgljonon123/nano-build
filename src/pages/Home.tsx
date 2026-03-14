@@ -10,7 +10,7 @@ export default function Home() {
     <>
       <section className="relative py-20 sm:py-28 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto text-center">
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-[var(--color-stone)] leading-tight">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl text-[var(--color-stone)] leading-tight">
             Find your next home
           </h1>
           <p className="mt-4 text-lg text-[var(--color-stone)]/80 max-w-xl mx-auto">

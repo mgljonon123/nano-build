@@ -149,12 +149,31 @@ export default function Staging() {
               name="What do you want to do?"
               className="w-full rounded-lg border border-[var(--color-warm-light)]/60 px-3 py-2 text-[var(--color-stone)] focus:outline-none focus:ring-2 focus:ring-[var(--color-warm)]"
               required
-              defaultValue="Furnish (Staging)"
+              defaultValue=""
             >
+              <option value="" disabled>
+                Select an option ...
+              </option>
               <option value="Furnish (Staging)">Furnish (Staging)</option>
               <option value="Empty the room">Empty the room</option>
               <option value="Clean the room">Clean the room</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-stone)] mb-1">
+              Upload your photo
+            </label>
+            <input
+              type="file"
+              name="photo"
+              accept="image/*"
+              required
+              className="block w-full text-sm text-[var(--color-stone)] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[var(--color-stone)] file:text-[var(--color-sand)] hover:file:bg-[var(--color-warm)]"
+            />
+            <p className="mt-1 text-xs text-[var(--color-stone)]/60">
+              Use a clear, well‑lit photo of the room you want to stage.
+            </p>
           </div>
 
           <div>
@@ -165,15 +184,18 @@ export default function Staging() {
               name="room"
               className="w-full rounded-lg border border-[var(--color-warm-light)]/60 px-3 py-2 text-[var(--color-stone)] focus:outline-none focus:ring-2 focus:ring-[var(--color-warm)]"
               required
-              defaultValue="LIVING ROOM"
+              defaultValue=""
             >
-              <option value="LIVING ROOM">Living room</option>
-              <option value="KITCHEN">Kitchen</option>
-              <option value="BEDROOM">Bedroom</option>
-              <option value="KIDS ROOM">Kids room</option>
-              <option value="BALCONY">Balcony</option>
-              <option value="OFFICE">Office</option>
-              <option value="BATHROOM">Bathroom</option>
+              <option value="" disabled>
+                Select an option ...
+              </option>
+              <option value="LIVING ROOM">LIVING ROOM</option>
+              <option value="KITCHEN">KITCHEN</option>
+              <option value="BEDROOM">BEDROOM</option>
+              <option value="KIDS ROOM">KIDS ROOM</option>
+              <option value="BALCONY">BALCONY</option>
+              <option value="OFFICE">OFFICE</option>
+              <option value="BATHROOM">BATHROOM</option>
             </select>
           </div>
 
@@ -185,7 +207,11 @@ export default function Staging() {
               name="style"
               className="w-full rounded-lg border border-[var(--color-warm-light)]/60 px-3 py-2 text-[var(--color-stone)] focus:outline-none focus:ring-2 focus:ring-[var(--color-warm)]"
               required
+              defaultValue=""
             >
+              <option value="" disabled>
+                Select an option ...
+              </option>
               <option value="Modern">Modern</option>
               <option value="Modern Luxe">Modern Luxe</option>
               <option value="Ultra Luxury">Ultra Luxury</option>
@@ -230,22 +256,6 @@ export default function Staging() {
                 Arthur Bonnet (Kitchen)
               </option>
             </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-stone)] mb-1">
-              Upload your photo
-            </label>
-            <input
-              type="file"
-              name="photo"
-              accept="image/*"
-              required
-              className="block w-full text-sm text-[var(--color-stone)] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[var(--color-stone)] file:text-[var(--color-sand)] hover:file:bg-[var(--color-warm)]"
-            />
-            <p className="mt-1 text-xs text-[var(--color-stone)]/60">
-              Use a clear, well‑lit photo of the room you want to stage.
-            </p>
           </div>
 
           <button

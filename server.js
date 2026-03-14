@@ -114,6 +114,29 @@ app.post(
       const { finalPrompt, roomType, action, styleDetecte } =
         buildStagingPrompt(formFields);
 
+      // Send the raw user choices to n8n before generating the image
+      try {
+        await axios.post(
+          "https://jnntugu.app.n8n.cloud/webhook/posting-user-choice",
+          {
+            roomType,
+            action,
+            styleDetecte,
+            formFields,
+          },
+          {
+            timeout: 5000,
+          },
+        );
+      } catch (n8nErr) {
+        console.error(
+          "[stage-image] Failed to send user choice to n8n",
+          n8nErr?.response?.status,
+          n8nErr?.response?.data || n8nErr.message,
+        );
+        // Do not block image generation if n8n fails.
+      }
+
       await ensureUploadsDir();
       const originalExt = guessExt(mimeType);
       const originalFileName = `${Date.now()}_${randomId()}_original.${originalExt}`;

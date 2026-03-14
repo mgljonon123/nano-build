@@ -16,6 +16,11 @@ export default function Layout({ children }: LayoutProps) {
           <nav className="flex items-center gap-6">
             <Link to="/" className="text-[var(--color-stone)]/80 hover:text-[var(--color-stone)] font-medium">Home</Link>
             <Link to="/listings" className="text-[var(--color-stone)]/80 hover:text-[var(--color-stone)] font-medium">Rentals</Link>
+            <Link to="/staging" className="text-[var(--color-stone)]/80 hover:text-[var(--color-stone)] font-medium">AI Staging</Link>
+            <Link to="/admin" className="text-[var(--color-stone)]/60 hover:text-[var(--color-stone)] text-sm">Admin</Link>
+            <Link to="/login" className="inline-flex items-center px-3 py-1.5 rounded-full border border-[var(--color-stone)]/20 text-sm font-medium text-[var(--color-stone)] hover:bg-[var(--color-stone)] hover:text-[var(--color-sand)] transition-colors">
+              Login
+            </Link>
           </nav>
         </div>
       </header>
