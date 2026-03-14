@@ -21,7 +21,8 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+*.sw? 
+.env
 
 # Prisma
 prisma/dev.db
