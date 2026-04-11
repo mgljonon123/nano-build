@@ -2,243 +2,111 @@ import "dotenv/config";
 import express from "express";
 import multer from "multer";
 import axios from "axios";
-import { InferenceClient } from "@huggingface/inference";
 import cors from "cors";
-import { PrismaClient } from "@prisma/client";
-import { buildStagingPrompt } from "./stagingPrompt.js";
-import path from "path";
-import { promises as fs } from "fs";
-import crypto from "crypto";
+import jwt from "jsonwebtoken";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL || "",
+  process.env.VITE_SUPABASE_ANON_KEY || ""
+);
 
 const app = express();
-const prisma = new PrismaClient();
 const upload = multer();
 const PORT = process.env.PORT || 4000;
-const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
-const AI_MODE = (process.env.AI_MODE || "gemini").toLowerCase();
-const UPLOADS_DIR = path.join(process.cwd(), "uploads");
-const hfClient = HF_API_KEY ? new InferenceClient(HF_API_KEY) : null;
+const N8N_AUTH_SIGNUP_URL = process.env.N8N_AUTH_SIGNUP_URL;
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/uploads", express.static(UPLOADS_DIR));
 
-async function ensureUploadsDir() {
-  await fs.mkdir(UPLOADS_DIR, { recursive: true });
-}
-
-function randomId() {
-  return crypto.randomBytes(16).toString("hex");
-}
-
-function guessExt(mimeType) {
-  if (mimeType === "image/png") return "png";
-  if (mimeType === "image/webp") return "webp";
-  return "jpg";
-}
-
-// --- CRUD: staging jobs (MongoDB via Prisma) ---
-app.get("/api/staging-jobs", async (_req, res) => {
-  try {
-    const jobs = await prisma.stagingJob.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    });
-    res.json({ jobs });
-  } catch (err) {
-    console.error("List staging jobs error:", err);
-    res
-      .status(500)
-      .json({ error: "Failed to list staging jobs", details: err.message });
+function getN8nRequestConfig(baseConfig = {}) {
+  const config = { ...baseConfig };
+  const secret = process.env.N8N_JWT_SECRET;
+  if (secret) {
+    const token = jwt.sign({ service: "new8nntest-server" }, secret, { expiresIn: "1h" });
+    config.headers = {
+      ...config.headers,
+      Authorization: `Bearer ${token}`,
+    };
   }
-});
-
-app.get("/api/staging-jobs/:id", async (req, res) => {
-  try {
-    const job = await prisma.stagingJob.findUnique({
-      where: { id: req.params.id },
-    });
-    if (!job) return res.status(404).json({ error: "Not found" });
-    res.json({ job });
-  } catch (err) {
-    console.error("Get staging job error:", err);
-    res
-      .status(500)
-      .json({ error: "Failed to get staging job", details: err.message });
-  }
-});
-
-app.delete("/api/staging-jobs/:id", async (req, res) => {
-  try {
-    await prisma.stagingJob.delete({ where: { id: req.params.id } });
-    res.status(204).send();
-  } catch (err) {
-    // Prisma throws if record not found
-    const isNotFound = String(err?.code || "").toUpperCase() === "P2025";
-    if (isNotFound) return res.status(404).json({ error: "Not found" });
-    console.error("Delete staging job error:", err);
-    res
-      .status(500)
-      .json({ error: "Failed to delete staging job", details: err.message });
-  }
-});
+  return config;
+}
 
 app.post(
   "/api/stage-image",
-  (req, res, next) => {
-    upload.single("photo")(req, res, (multerErr) => {
-      if (multerErr) {
-        console.error("[stage-image] multer error:", multerErr);
-        return res
-          .status(400)
-          .json({ error: "File upload failed", details: multerErr.message });
+  upload.single("photo"),
+  async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Unauthorized", details: "User must be logged in to use staging" });
       }
-      next();
-    });
-  },
-  (req, res) => {
-    const sendError = (status, error, details) => {
-      console.error("[stage-image]", status, error, details);
-      res.status(status).json({ error, details });
-    };
-    const run = async () => {
-      if (!req.file) {
-        return sendError(400, "photo file is required", null);
+      const token = authHeader.split(" ")[1];
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (authError || !user) {
+        return res.status(401).json({ error: "Unauthorized", details: authError?.message || "Invalid or expired token" });
       }
 
       const formFields = req.body || {};
-      const photoBuffer = req.file.buffer;
-      const mimeType = req.file.mimetype;
-
-      const { finalPrompt, roomType, action, styleDetecte } =
-        buildStagingPrompt(formFields);
-
-      // Send the raw user choices to n8n before generating the image
-      try {
-        await axios.post(
-          "https://jnntugu.app.n8n.cloud/webhook/posting-user-choice",
-          {
-            roomType,
-            action,
-            styleDetecte,
-            formFields,
-          },
-          {
-            timeout: 5000,
-          },
-        );
-      } catch (n8nErr) {
-        console.error(
-          "[stage-image] Failed to send user choice to n8n",
-          n8nErr?.response?.status,
-          n8nErr?.response?.data || n8nErr.message,
-        );
-        // Do not block image generation if n8n fails.
-      }
-
-      await ensureUploadsDir();
-      const originalExt = guessExt(mimeType);
-      const originalFileName = `${Date.now()}_${randomId()}_original.${originalExt}`;
-      await fs.writeFile(path.join(UPLOADS_DIR, originalFileName), photoBuffer);
-      const originalUrl = `/uploads/${originalFileName}`;
-
-      const saveJob = async (imageUrl) => {
-        await prisma.stagingJob.create({
-          data: {
-            roomType,
-            action,
-            style: styleDetecte,
-            imageUrl: imageUrl ?? null,
-            finalPrompt,
-          },
-        });
-      };
-
-      // Free mode: skip external image generation, still save prompt + metadata
-      if (AI_MODE === "prompt_only") {
-        await saveJob(null);
-        return res.status(200).json({
-          finalPrompt,
-          roomType,
-          action,
-          styleDetecte,
-          imageUrl: null,
-          originalUrl,
-          note: "AI_MODE=prompt_only (no image generation; only prompt + original image are saved).",
-        });
-      }
-
-      // Mock mode: treat the uploaded image as the "staged" result (no external AI)
-      if (AI_MODE === "mock") {
-        await saveJob(originalUrl);
-        return res.status(200).json({
-          finalPrompt,
-          roomType,
-          action,
-          styleDetecte,
-          imageUrl: originalUrl,
-          originalUrl,
-          note: "AI_MODE=mock (no external AI called, using uploaded image as result).",
-        });
-      }
-
-      if (!HF_API_KEY) {
-        return sendError(
-          500,
-          "HUGGING_FACE_API_KEY is not set in .env",
-          "Create a token on Hugging Face and set HUGGING_FACE_API_KEY.",
-        );
-      }
-
-      // Hugging Face text-to-image via official JS client (uses router API under the hood)
-      // Use a model that has an available Inference Provider on hf-inference.
-      const hfModel = "black-forest-labs/FLUX.1-schnell";
-      if (!hfClient) {
-        return sendError(
-          500,
-          "HF client not initialized",
-          "Missing or invalid HUGGING_FACE_API_KEY.",
-        );
-      }
-
-      const imageBlob = await hfClient.textToImage({
-        provider: "hf-inference",
-        model: hfModel,
-        inputs: finalPrompt,
+      
+      const config = getN8nRequestConfig({
+        timeout: 60000,
+        ...(authHeader && { headers: { "X-Original-Authorization": authHeader } }),
       });
+      
+      const payload = { ...formFields };
+      if (req.file) {
+        payload.photo = {
+           name: req.file.originalname,
+           type: req.file.mimetype,
+           data: req.file.buffer.toString('base64')
+        };
+      }
 
-      const arrayBuffer = await imageBlob.arrayBuffer();
-      const outBuffer = Buffer.from(arrayBuffer);
-      const outExt = "png";
-      const outFileName = `${Date.now()}_${randomId()}_staged.${outExt}`;
-      await fs.writeFile(path.join(UPLOADS_DIR, outFileName), outBuffer);
-      const imageUrl = `/uploads/${outFileName}`;
-
-      await saveJob(imageUrl);
-      return res.json({
-        finalPrompt,
-        roomType,
-        action,
-        styleDetecte,
-        imageUrl,
-        originalUrl,
-      });
-    };
-    run().catch((err) => {
-      const status = err.response?.status;
-      const body = err.response?.data;
-      const message = body?.error?.message || body?.message || err.message;
-      const details =
-        typeof body === "object" ? JSON.stringify(body) : body || err.message;
-      console.error("HF staging error:", status, body || err);
-      res.status(status || 500).json({
-        error: "Error while generating staged image",
-        details: message || details,
-      });
-    });
-  },
+      const n8nRes = await axios.post(
+        "https://psdagicilalalr.app.n8n.cloud/webhook-test/4800a196-c906-4278-8c52-ada7bb79f61e",
+        payload,
+        config
+      );
+      
+      return res.json(n8nRes.data);
+    } catch (err) {
+      console.error("Staging error:", err?.response?.data || err.message);
+      res.status(500).json({ error: "Failed to process", details: err?.response?.data || err.message });
+    }
+  }
 );
+
+app.post("/api/contact-subscription", upload.none(), async (req, res) => {
+  try {
+    const contactWebhookUrl = process.env.N8N_CONTACT_WEBHOOK_URL;
+    if (!contactWebhookUrl) {
+      return res.status(500).json({
+        error: "Contact webhook not configured",
+        details: "Set N8N_CONTACT_WEBHOOK_URL in your environment variables.",
+      });
+    }
+
+    const payload = req.body || {};
+    const authHeader = req.headers.authorization;
+
+    const config = getN8nRequestConfig({
+      timeout: 15000,
+      ...(authHeader && { headers: { "X-Original-Authorization": authHeader } }),
+    });
+
+    const n8nRes = await axios.post(contactWebhookUrl, payload, config);
+    return res.json(n8nRes.data);
+  } catch (err) {
+    console.error("Contact submission error:", err?.response?.data || err.message);
+    res.status(500).json({
+      error: "Failed to send message",
+      details: err?.response?.data || err.message,
+    });
+  }
+});
 
 // Ensure JSON on any unhandled error
 app.use((err, _req, res, _next) => {
@@ -253,9 +121,5 @@ app.listen(PORT, () => {
 });
 
 process.on("SIGINT", async () => {
-  try {
-    await prisma.$disconnect();
-  } finally {
-    process.exit(0);
-  }
+  process.exit(0);
 });

@@ -1,9 +1,10 @@
 export default function Admin() {
   return (
-    <section className="py-12 sm:py-16 px-4 sm:px-6 bg-white/60">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
+    <div className="font-marketing bg-white text-[var(--color-stone)] min-h-screen">
+      <section className="bg-[var(--color-section)] py-10 sm:py-14 px-4 sm:px-6 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <header className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
             <h1 className="font-display text-3xl sm:text-4xl">
               Admin dashboard
             </h1>
@@ -108,7 +109,8 @@ export default function Admin() {
             </ul>
           </div>
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
+    </div>
   );
 }

@@ -1,25 +1,39 @@
-import { Routes, Route } from 'react-router-dom'
-import Layout from './components/Layout'
-import Home from './pages/Home'
-import Listings from './pages/Listings'
-import PropertyDetail from './pages/PropertyDetail'
-import Staging from './pages/Staging'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import Admin from './pages/Admin'
+import { Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout";
+import Home from "./pages/Home";
+import Staging from "./pages/Staging";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Admin from "./pages/Admin";
+import Contact from "./pages/Contact";
+import RequireAuth from "./components/RequireAuth";
+import RequireAdmin from "./components/RequireAdmin";
 
 export default function App() {
   return (
     <Layout>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/listings" element={<Listings />} />
-        <Route path="/listings/:slug" element={<PropertyDetail />} />
-        <Route path="/staging" element={<Staging />} />
+        <Route
+          path="/staging"
+          element={
+            <RequireAuth>
+              <Staging />
+            </RequireAuth>
+          }
+        />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <Admin />
+            </RequireAdmin>
+          }
+        />
       </Routes>
     </Layout>
-  )
+  );
 }
