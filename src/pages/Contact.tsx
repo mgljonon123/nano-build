@@ -94,7 +94,7 @@ export default function Contact() {
         throw new Error(`Server error: ${errorText}`);
       }
 
-      const data = await response.json();
+      await response.json();
       setStatus("success");
     } catch (err: any) {
       console.error(err);

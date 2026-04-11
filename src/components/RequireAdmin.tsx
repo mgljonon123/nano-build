@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 export default function RequireAdmin({ children }: { children: ReactNode }) {
   const { user, role, loading } = useAuth()
