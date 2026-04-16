@@ -60,14 +60,19 @@ export default function Layout({ children }: LayoutProps) {
   const authed = Boolean(user);
   const location = useLocation();
   const email = user?.email;
+  const isAdminPage = location.pathname === "/admin";
 
   const navLink = (to: string, label: string, active: boolean) => (
     <Link
       to={to}
       className={
         active
-          ? "text-[var(--color-forest)] font-semibold"
-          : "text-[var(--color-stone)]/80 hover:text-[var(--color-stone)] transition-colors"
+          ? isAdminPage
+            ? "text-purple-400 font-semibold"
+            : "text-[var(--color-forest)] font-semibold"
+          : isAdminPage
+            ? "text-gray-300/80 hover:text-gray-300 transition-colors"
+            : "text-[var(--color-stone)]/80 hover:text-[var(--color-stone)] transition-colors"
       }
     >
       {label}
@@ -75,12 +80,16 @@ export default function Layout({ children }: LayoutProps) {
   );
 
   return (
-    <div className="flex-1 flex flex-col w-full">
-      <header className="bg-white border-b border-gray-100/80 relative z-50 font-marketing">
+    <div
+      className={`flex-1 flex flex-col w-full ${isAdminPage ? "bg-black" : ""}`}
+    >
+      <header
+        className={`${isAdminPage ? "bg-gray-900/95 backdrop-blur-sm border-gray-800" : "bg-white border-b border-gray-100/80"} relative z-50 font-marketing`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-[4.5rem] flex items-center justify-between gap-4">
           <Link
             to="/"
-            className="flex items-center gap-2 text-[var(--color-stone)] shrink-0"
+            className={`flex items-center gap-2 shrink-0 ${isAdminPage ? "text-gray-100" : "text-[var(--color-stone)]"}`}
             aria-label="Home"
           >
             <OrbixLogo className="w-10 h-7" />
@@ -89,7 +98,11 @@ export default function Layout({ children }: LayoutProps) {
             {navLink("/", "Home", location.pathname === "/")}
             <a
               href="#about"
-              className="text-[var(--color-stone)]/80 hover:text-[var(--color-stone)] transition-colors"
+              className={
+                isAdminPage
+                  ? "text-gray-300/80 hover:text-gray-300 transition-colors"
+                  : "text-[var(--color-stone)]/80 hover:text-[var(--color-stone)] transition-colors"
+              }
             >
               About Us
             </a>
@@ -115,6 +128,11 @@ export default function Layout({ children }: LayoutProps) {
               </div>
             </details> */}
             {navLink(
+              "/subscription",
+              "Subscription",
+              location.pathname === "/subscription",
+            )}
+            {navLink(
               "/contact",
               "Contact Us",
               location.pathname === "/contact",
@@ -124,7 +142,7 @@ export default function Layout({ children }: LayoutProps) {
             {!authed ? (
               <Link
                 to="/login"
-                className="hidden sm:inline text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-stone)] px-2 py-1.5"
+                className={`hidden sm:inline text-sm font-medium px-2 py-1.5 ${isAdminPage ? "text-gray-400 hover:text-gray-300" : "text-[var(--color-muted)] hover:text-[var(--color-stone)]"}`}
               >
                 Sign in
               </Link>
@@ -132,12 +150,14 @@ export default function Layout({ children }: LayoutProps) {
               <>
                 <Link
                   to="/admin"
-                  className="hidden sm:inline text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-stone)]"
+                  className={`hidden sm:inline text-sm font-medium ${isAdminPage ? "text-purple-400 hover:text-purple-300" : "text-[var(--color-muted)] hover:text-[var(--color-stone)]"}`}
                 >
                   Admin
                 </Link>
                 {email ? (
-                  <span className="hidden lg:inline max-w-[140px] truncate text-xs text-[var(--color-muted)]">
+                  <span
+                    className={`hidden lg:inline max-w-[140px] truncate text-xs ${isAdminPage ? "text-gray-500" : "text-[var(--color-muted)]"}`}
+                  >
                     {email}
                   </span>
                 ) : null}
@@ -147,7 +167,7 @@ export default function Layout({ children }: LayoutProps) {
                     await signOut();
                     navigate("/");
                   }}
-                  className="hidden sm:inline text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-stone)]"
+                  className={`hidden sm:inline text-sm font-medium ${isAdminPage ? "text-gray-400 hover:text-gray-300" : "text-[var(--color-muted)] hover:text-[var(--color-stone)]"}`}
                 >
                   Logout
                 </button>
@@ -155,7 +175,11 @@ export default function Layout({ children }: LayoutProps) {
             )}
             <Link
               to="/staging"
-              className="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-sm"
+              className={`inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors shadow-sm ${
+                isAdminPage
+                  ? "bg-gradient-to-r from-purple-700 to-purple-800 text-white hover:from-purple-800 hover:to-purple-900 border border-purple-600/50"
+                  : "bg-emerald-600 text-white hover:bg-emerald-500"
+              }`}
             >
               Try AI Staging
             </Link>
